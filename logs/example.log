@@ -1,0 +1,59 @@
+DEBUG:asyncio:Using selector: EpollSelector
+INFO:websockets.server:server listening on 0.0.0.0:8765
+DEBUG:websockets.server:= connection is CONNECTING
+DEBUG:websockets.server:< GET / HTTP/1.1
+DEBUG:websockets.server:< Sec-WebSocket-Version: 13
+DEBUG:websockets.server:< Sec-WebSocket-Key: djWf3KQctO0GDDbUzrbBpA==
+DEBUG:websockets.server:< Connection: Upgrade
+DEBUG:websockets.server:< Upgrade: websocket
+DEBUG:websockets.server:< Sec-WebSocket-Extensions: permessage-deflate; client_max_window_bits
+DEBUG:websockets.server:< Host: localhost:8765
+DEBUG:websockets.server:> HTTP/1.1 101 Switching Protocols
+DEBUG:websockets.server:> Date: Sun, 25 May 2025 22:27:47 GMT
+DEBUG:websockets.server:> Upgrade: websocket
+DEBUG:websockets.server:> Connection: Upgrade
+DEBUG:websockets.server:> Sec-WebSocket-Accept: cDCHIOYDEdxUJLjwUayycvAw6Jg=
+DEBUG:websockets.server:> Sec-WebSocket-Extensions: permessage-deflate; server_max_window_bits=12; client_max_window_bits=12
+DEBUG:websockets.server:> Server: Python/3.10 websockets/15.0.1
+DEBUG:websockets.server:= connection is OPEN
+INFO:websockets.server:connection open
+INFO:root:[+] Secure connection from ('127.0.0.1', 34626)
+DEBUG:websockets.server:< CLOSE 1000 (OK) [2 bytes]
+DEBUG:websockets.server:> CLOSE 1000 (OK) [2 bytes]
+DEBUG:websockets.server:= connection is CLOSING
+DEBUG:websockets.server:> EOF
+DEBUG:websockets.server:x closing TCP connection
+DEBUG:websockets.server:< EOF
+DEBUG:websockets.server:= connection is CLOSED
+INFO:websockets.server:server closing
+INFO:websockets.server:server closed
+DEBUG:asyncio:Using selector: EpollSelector
+INFO:__main__:🔐 Secure WebSocket server on wss://0.0.0.0:8765
+INFO:websockets.server:server listening on 0.0.0.0:8765
+DEBUG:websockets.server:= connection is CONNECTING
+DEBUG:websockets.server:< GET / HTTP/1.1
+DEBUG:websockets.server:< Sec-WebSocket-Version: 13
+DEBUG:websockets.server:< Sec-WebSocket-Key: Qt7lm0XJVNY/NNYEPZgQZQ==
+DEBUG:websockets.server:< Connection: Upgrade
+DEBUG:websockets.server:< Upgrade: websocket
+DEBUG:websockets.server:< Sec-WebSocket-Extensions: permessage-deflate; client_max_window_bits
+DEBUG:websockets.server:< Host: localhost:8765
+DEBUG:websockets.server:> HTTP/1.1 101 Switching Protocols
+DEBUG:websockets.server:> Date: Sun, 25 May 2025 22:44:37 GMT
+DEBUG:websockets.server:> Upgrade: websocket
+DEBUG:websockets.server:> Connection: Upgrade
+DEBUG:websockets.server:> Sec-WebSocket-Accept: bO6INyijN4Vqm/WfpdQw14W1KY4=
+DEBUG:websockets.server:> Sec-WebSocket-Extensions: permessage-deflate; server_max_window_bits=12; client_max_window_bits=12
+DEBUG:websockets.server:> Server: Python/3.10 websockets/15.0.1
+DEBUG:websockets.server:= connection is OPEN
+INFO:websockets.server:connection open
+INFO:__main__:[+] Secure connection from ('127.0.0.1', 56220)
+DEBUG:websockets.server:< CLOSE 1000 (OK) [2 bytes]
+DEBUG:websockets.server:> CLOSE 1000 (OK) [2 bytes]
+DEBUG:websockets.server:= connection is CLOSING
+DEBUG:websockets.server:> EOF
+DEBUG:websockets.server:x closing TCP connection
+DEBUG:websockets.server:< EOF
+DEBUG:websockets.server:= connection is CLOSED
+INFO:websockets.server:server closing
+INFO:websockets.server:server closed
