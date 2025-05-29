@@ -2,7 +2,7 @@ import asyncio
 import ssl
 import websockets
 from led import LED, Color
-from button import Button
+from button import Buttons
 import json
 import logging 
 
@@ -15,17 +15,18 @@ CERT_FILE = "cert.pem"
 KEY_FILE = "key.pem"
 
 LEDs = (
-    LED(pin_r=14, pin_g=18, pin_b=19),  # Example LED on GPIO pins
-    LED(pin_r=21, pin_g=22, pin_b=23),    # Another LED on different GPIO pins
-    LED(pin_r=25, pin_g=26, pin_b=27),   # And another one
-    # LED(pin_r=29, pin_g=37, pin_b=36),     # Yet another LED
+    LED(id = 1, pin_r=14, pin_g=18, pin_b=19),  # Example LED on GPIO pins
+    LED(id = 2, pin_r=21, pin_g=22, pin_b=23),    # Another LED on different GPIO pins
+    LED(id = 3, pin_r=25, pin_g=26, pin_b=27),   # And another one
+    # LED(id = 4, pin_r=29, pin_g=37, pin_b=36),     # Yet another LED
 )
-Buttons = (
-    Button(id=1, pin=16),  # Button on GPIO pin 16
-    Button(id=2, pin=20), # Another button on GPIO pin 12
-    Button(id=3, pin=24), # And another button on GPIO pin 16
-    Button(id=4, pin=28), # Yet another button on GPIO pin 20
-)
+input_buttons = Buttons({
+    1: 16,  # Button ID 1 on GPIO pin 16
+    2: 20,  # Button ID 2 on GPIO pin 20
+    3: 24,  # Button ID 3 on GPIO pin 24
+    4: 28,  # Button ID 4 on GPIO pin 28
+})
+
 
 
 # Create the SSL context
@@ -35,8 +36,8 @@ ssl_context.load_cert_chain(certfile=CERT_FILE, keyfile=KEY_FILE)
 # Client handler
 async def handle_connection(websocket):
     logger.info(f"[+] Secure connection from {websocket.remote_address}")
-    for button in Buttons:
-        button.socket = websocket
+    input_buttons.socket = websocket  # Assign the WebSocket to the buttons for sending commands
+    button_task = asyncio.create_task(input_buttons.watch_multiple_line_values())
     try:
         async for message in websocket:
             logger.debug(f"[>] {message}")
@@ -80,8 +81,8 @@ async def handle_connection(websocket):
             await websocket.send(f"Echo: {message}")
     except websockets.ConnectionClosed:
         logger.info(f"[-] Connection closed from {websocket.remote_address}")
-        for button in Buttons:
-            button.socket = None
+        input_buttons.socket = None
+        button_task.cancel()
 
 # Main event loop
 async def main():

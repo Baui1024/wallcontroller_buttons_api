@@ -7,13 +7,13 @@ from collections import namedtuple
 Color = namedtuple('Color', ['r', 'g', 'b'])
 
 class LED:
-    def __init__(self, pin_r: int, pin_g: int, pin_b: int):
+    def __init__(self, id: int, pin_r: int, pin_g: int, pin_b: int):
         self.pin_r = pin_r 
         self.pin_g = pin_g
         self.pin_b = pin_b
         self.color = Color(255, 0, 0) # LED is initially off
         self.state = True
-        self.led = (PWMPin(pin_r), PWMPin(pin_g), PWMPin(pin_b))
+        self.led = (PWMPin(id, pin_r), PWMPin(id, pin_g), PWMPin(id, pin_b))
         self.update_pwm()
 
     def on(self):
@@ -45,10 +45,14 @@ class LED:
         
 
 class PWMPin:
-    def __init__(self, pin):
+    def __init__(self, id: int, pin: int):
         self.state = False
         self.gpio_pin = pin
-        self.gpio_line = gpiod.request_lines("/dev/gpiochip0", {(self.gpio_pin) : gpiod.LineSettings(direction=Direction.OUTPUT)})
+        self.gpio_line = gpiod.request_lines(
+            "/dev/gpiochip0", 
+            consumer = f"LED-{id}-Pin-{self.gpio_pin}",
+            config = {(self.gpio_pin) : gpiod.LineSettings(direction=Direction.OUTPUT)}
+            )
         self.duty_cycle = 0.5  # Initial duty cycle is 50%
         self.frequency = 50  # Default max frequency in Hz
         self.high_time = 1/self.frequency * self.duty_cycle
