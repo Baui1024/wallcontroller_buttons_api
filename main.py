@@ -5,9 +5,14 @@ from led import LED, Color
 from button import Buttons
 import json
 import logging 
+import os
 
+
+# Ensure log directory exists
+os.makedirs('logs', exist_ok=True)
 
 logger = logging.getLogger(__name__)
+
 #logging.basicConfig(filename='logs/example.log', encoding='utf-8', level=logging.DEBUG)
                     
 PORT = 8765
@@ -35,7 +40,8 @@ ssl_context.load_cert_chain(certfile=CERT_FILE, keyfile=KEY_FILE)
 
 # Client handler
 async def handle_connection(websocket):
-    logger.info(f"[+] Secure connection from {websocket.remote_address}")
+    remote_address = websocket.remote_address[0]
+    logger.info(f"[+] Secure connection from {remote_address}")
     input_buttons.socket = websocket  # Assign the WebSocket to the buttons for sending commands
     button_task = asyncio.create_task(input_buttons.watch_multiple_line_values())
     try:
@@ -80,7 +86,7 @@ async def handle_connection(websocket):
                 await websocket.send("Invalid JSON format")
             await websocket.send(f"Echo: {message}")
     except websockets.ConnectionClosed:
-        logger.info(f"[-] Connection closed from {websocket.remote_address}")
+        logger.info(f"[-] Connection closed from {remote_address}")
         input_buttons.socket = None
         button_task.cancel()
 
