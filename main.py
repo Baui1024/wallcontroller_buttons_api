@@ -14,10 +14,11 @@ os.makedirs('logs', exist_ok=True)
 logger = logging.getLogger(__name__)
 
 #logging.basicConfig(filename='logs/example.log', encoding='utf-8', level=logging.DEBUG)
-                    
+                    #!/bin/sh
+
 PORT = 8765
-CERT_FILE = "cert.pem"
-KEY_FILE = "key.pem"
+CERT_FILE = "/etc/ssl/certs/wallcontroller.crt"
+KEY_FILE = "/etc/ssl/private/wallcontroller.key"
 
 LEDs = (
     LED(id = 1, pin_r=14, pin_g=18, pin_b=19),  # Example LED on GPIO pins
