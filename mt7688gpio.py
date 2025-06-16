@@ -19,6 +19,7 @@ class MT7688GPIO:
         self.REG_CLR   = 0x640 if pin < 32 else 0x644  # Clear bits
         self.REG_DATA  = 0x620 if pin < 32 else 0x624  # Read current input level
         self.pin = pin if pin < 32 else pin - 32
+        print(f"Using pin {self.pin} on MT7688",self.REG_DIR,self.REG_POL,self.REG_SET,self.REG_CLR,self.REG_DATA)
         self.mem = open("/dev/mem", "r+b")
         self.map = mmap.mmap(self.mem.fileno(), self.MAP_SIZE, offset=self.BASE_ADDR)
 
@@ -31,16 +32,22 @@ class MT7688GPIO:
         self.map.write(struct.pack("<I", value))
 
     def set_direction(self, is_output, flip=False):
+        # Set direction
         val = self._read(self.REG_DIR)
         if is_output:
             val |= (1 << self.pin)
         else:
             val &= ~(1 << self.pin)
         self._write(self.REG_DIR, val)
+
+        # Set polarity
+        val = self._read(self.REG_POL)
         if flip:
-            self._write(self.REG_POL, 1 << self.pin)
+            val |= (1 << self.pin)
         else:
-            self._write(self.REG_POL, 0 << self.pin)
+            val &= ~(1 << self.pin)
+        self._write(self.REG_POL, val)
+
 
 
     def set_high(self):
