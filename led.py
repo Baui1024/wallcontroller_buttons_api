@@ -2,8 +2,9 @@ import time
 import asyncio
 import threading
 import gpiod
-from gpiod.line import Direction, Value
+from gpiod.line import Direction, Value, Drive
 from collections import namedtuple
+
 Color = namedtuple('Color', ['r', 'g', 'b'])
 
 class LED:
@@ -11,7 +12,7 @@ class LED:
         self.pin_r = pin_r 
         self.pin_g = pin_g
         self.pin_b = pin_b
-        self.color = Color(255, 0, 0) # LED is initially off
+        self.color = Color(0, 0, 0) # LED is initially off
         self.state = True
         self.led = (PWMPin(id, pin_r), PWMPin(id, pin_g), PWMPin(id, pin_b))
         self.update_pwm()
@@ -47,14 +48,14 @@ class LED:
 class PWMPin:
     def __init__(self, id: int, pin: int):
         self.state = False
-        self.gpio_pin = pin
+        self.gpio_pin = pin if pin < 32 else pin - 32
         self.gpio_line = gpiod.request_lines(
-            "/dev/gpiochip0", 
+            "/dev/gpiochip0" if pin < 32 else "/dev/gpiochip1", 
             consumer = f"LED-{id}-Pin-{self.gpio_pin}",
-            config = {(self.gpio_pin) : gpiod.LineSettings(direction=Direction.OUTPUT)}
+            config = {(self.gpio_pin) : gpiod.LineSettings(direction=Direction.OUTPUT,drive=Drive.OPEN_DRAIN)}
             )
         self.duty_cycle = 0.5  # Initial duty cycle is 50%
-        self.frequency = 50  # Default max frequency in Hz
+        self.frequency = 100  # Default max frequency in Hz
         self.high_time = 1/self.frequency * self.duty_cycle
         self.low_time = 1/self.frequency * (1 - self.duty_cycle)
         self.identify = False   
@@ -64,10 +65,10 @@ class PWMPin:
         
 
     def pin_on(self):
-        self.gpio_line.set_value(self.gpio_pin, Value.ACTIVE)
+        self.gpio_line.set_value(self.gpio_pin, Value.INACTIVE)
 
     def pin_off(self):
-        self.gpio_line.set_value(self.gpio_pin, Value.INACTIVE)
+        self.gpio_line.set_value(self.gpio_pin, Value.ACTIVE)
 
     def identify_led(self, state: bool):
         self.identify = state

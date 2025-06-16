@@ -34,10 +34,10 @@ class Buttons:
                     cmd = {}
                     if event.event_type is event.Type.RISING_EDGE:
                         print("Rising edge detected on line {}".format(event.line_offset))
-                        cmd = {'command': 'button_press', 'button_id': self.button_ids[self.line_offsets.index(event.line_offset)], 'value': 1}
+                        cmd = {'command': 'button_press', 'button_id': self.button_ids[self.line_offsets.index(event.line_offset)], 'value': 0}
                     if event.event_type is event.Type.FALLING_EDGE:
                         print("Falling edge detected on line {}".format(event.line_offset))
-                        cmd = {'command': 'button_press', 'button_id': self.button_ids[self.line_offsets.index(event.line_offset)], 'value': 0}
+                        cmd = {'command': 'button_press', 'button_id': self.button_ids[self.line_offsets.index(event.line_offset)], 'value': 1}
                 # time.sleep(0.01)  # Polling interval
                     if self.socket:
                         try: 

@@ -21,10 +21,10 @@ CERT_FILE = "/etc/ssl/certs/wallcontroller.crt"
 KEY_FILE = "/etc/ssl/private/wallcontroller.key"
 
 LEDs = (
-    LED(id = 1, pin_r=14, pin_g=18, pin_b=19),  # Example LED on GPIO pins
+    LED(id = 1, pin_r=17, pin_g=18, pin_b=19),  # Example LED on GPIO pins
     LED(id = 2, pin_r=21, pin_g=22, pin_b=23),    # Another LED on different GPIO pins
     LED(id = 3, pin_r=25, pin_g=26, pin_b=27),   # And another one
-    # LED(id = 4, pin_r=29, pin_g=37, pin_b=36),     # Yet another LED
+    LED(id = 4, pin_r=29, pin_g=37, pin_b=36),     # Yet another LED
 )
 input_buttons = Buttons({
     1: 16,  # Button ID 1 on GPIO pin 16
@@ -54,38 +54,41 @@ async def handle_connection(websocket):
                     command = data['command']
                     led_index = data.get('led_index', 0) -1  # Convert to zero-based index
                     if command == 'set_color':
-                        color = data.get('color', {'r': 0, 'g': 0, 'b': 0})
+                        color = data.get('color', "#000000")
+                        hex_color = color.lstrip('#')
+                        r = int(hex_color[0:2], 16)
+                        g = int(hex_color[2:4], 16)
+                        b = int(hex_color[4:6], 16)
+                        color_obj = Color(r, g, b)
                         if 0 <= led_index < len(LEDs):
-                            color_obj = Color(color['r'], color['g'], color['b'])
                             LEDs[led_index].set_color(color_obj)
-                            await websocket.send(f"LED {led_index} color set to {color}")
+                            await websocket.send(json.dumps({"succes": f"LED {led_index + 1} color set to {color}"}))
                         else:
-                            await websocket.send("Invalid LED index")
+                            await websocket.send(json.dumps({"error": "Invalid LED index"}))
                     elif command == 'toggle':
                         if 0 <= led_index < len(LEDs):
                             LEDs[led_index].toggle()
-                            await websocket.send(f"LED {led_index} toggled")
+                            await websocket.send(json.dumps({"succes": f"LED {led_index + 1} toggled"}))
                         else:
-                            await websocket.send("Invalid LED index")
+                            await websocket.send(json.dumps({"error": "Invalid LED index"}))
                     elif command == 'on':
                         if 0 <= led_index < len(LEDs):
                             LEDs[led_index].on()
-                            await websocket.send(f"LED {led_index} turned ON")
+                            await websocket.send(json.dumps({"succes": f"LED {led_index + 1} turned ON"}))
                         else:
-                            await websocket.send("Invalid LED index")
+                            await websocket.send(json.dumps({"error": "Invalid LED index"}))
                     elif command == 'off':
                         if 0 <= led_index < len(LEDs):
                             LEDs[led_index].off()
-                            await websocket.send(f"LED {led_index} turned OFF")
+                            await websocket.send(json.dumps({"succes": f"LED {led_index + 1} turned OFF"}))
                         else:
-                            await websocket.send("Invalid LED index")
+                            await websocket.send(json.dumps({"error": "Invalid LED index"}))
                     else:
-                        await websocket.send("Unknown command")
+                        await websocket.send(json.dumps({"error": "Unknown command"}))
                 else:
                     await websocket.send("No command provided")
             except json.JSONDecodeError:
-                await websocket.send("Invalid JSON format")
-            await websocket.send(f"Echo: {message}")
+                await websocket.send('{"error": "Invalid JSON format"}')
     except websockets.ConnectionClosed:
         logger.info(f"[-] Connection closed from {remote_address}")
         input_buttons.socket = None
