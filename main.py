@@ -21,16 +21,17 @@ CERT_FILE = "/etc/ssl/certs/wallcontroller.crt"
 KEY_FILE = "/etc/ssl/private/wallcontroller.key"
 
 LEDs = (
-    LED(id = 1, pin_r=17, pin_g=18, pin_b=19),  # Example LED on GPIO pins
-    LED(id = 2, pin_r=21, pin_g=22, pin_b=23),    # Another LED on different GPIO pins
-    LED(id = 3, pin_r=25, pin_g=26, pin_b=27),   # And another one
-    LED(id = 4, pin_r=29, pin_g=37, pin_b=36),     # Yet another LED
+    LED(id = 1, pin_r=29, pin_g=36, pin_b=37), 
+    LED(id = 2, pin_r=17, pin_g=18, pin_b=19), 
+    LED(id = 3, pin_r=21, pin_g=22, pin_b=23),   
+    LED(id = 4, pin_r=25, pin_g=26, pin_b=27),  
+       
 )
 input_buttons = Buttons({
-    1: 16,  # Button ID 1 on GPIO pin 16
-    2: 20,  # Button ID 2 on GPIO pin 20
-    3: 24,  # Button ID 3 on GPIO pin 24
-    4: 28,  # Button ID 4 on GPIO pin 28
+    1: 28,  # Button ID 2 on GPIO pin 28
+    2: 16,  # Button ID 3 on GPIO pin 16
+    3: 20,  # Button ID 4 on GPIO pin 20
+    4: 24,  # Button ID 1 on GPIO pin 24
 })
 
 
@@ -44,7 +45,7 @@ async def handle_connection(websocket):
     remote_address = websocket.remote_address[0]
     logger.info(f"[+] Secure connection from {remote_address}")
     input_buttons.socket = websocket  # Assign the WebSocket to the buttons for sending commands
-    button_task = asyncio.create_task(input_buttons.watch_multiple_line_values())
+    await input_buttons.open_gpio()
     try:
         async for message in websocket:
             logger.debug(f"[>] {message}")
@@ -92,7 +93,7 @@ async def handle_connection(websocket):
     except websockets.ConnectionClosed:
         logger.info(f"[-] Connection closed from {remote_address}")
         input_buttons.socket = None
-        button_task.cancel()
+        await input_buttons.close_gpio()
 
 # Main event loop
 async def main():

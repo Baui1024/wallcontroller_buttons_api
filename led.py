@@ -4,7 +4,7 @@ import threading
 import gpiod
 from gpiod.line import Direction, Value, Drive
 from collections import namedtuple
-from mt7688gpio import MT7688GPIO
+from mt7688gpio import MT7688GPIOAsync
 
 Color = namedtuple('Color', ['r', 'g', 'b'])
 
@@ -13,9 +13,9 @@ class LED:
         self.pin_r = pin_r 
         self.pin_g = pin_g
         self.pin_b = pin_b
-        self.color = Color(100, 0, 0) # LED is initially off
+        self.color = Color(0, 0, 0) # LED is initially off
         self.state = True
-        self.led = (PWMPin(id, pin_r), PWMPin(id, pin_g), PWMPin(id, pin_b))
+        self.led = (PWMPin(pin_r), PWMPin(pin_g), PWMPin(pin_b))
         self.update_pwm()
 
     def on(self):
@@ -47,13 +47,13 @@ class LED:
         
 
 class PWMPin:
-    def __init__(self, id: int, pin: int):
+    def __init__(self, pin: int):
         self.state = True
         self.gpio_pin = pin
-        self.gpio_pin_register = MT7688GPIO(self.gpio_pin)
+        self.gpio_pin_register = MT7688GPIOAsync(self.gpio_pin)
         self.gpio_pin_register.set_direction(is_output=True, flip=True)
         self.duty_cycle = 0.5  # Initial duty cycle is 50%
-        self.frequency = 100  # Default max frequency in Hz
+        self.frequency = 1000  # Default max frequency in Hz
         self.high_time = 1/self.frequency * self.duty_cycle
         self.low_time = 1/self.frequency * (1 - self.duty_cycle)
         self.identify = False   
@@ -84,9 +84,11 @@ class PWMPin:
             raise ValueError("Duty cycle must be between 0 and 100")
 
     def run(self):
-        t = time.time()
+        
         try:
+            # t = time.time()
             while True:
+                
                 if self.identify:
                     self.pin_off()
                     print(f"Setting pin {self.gpio_path} LOW for identification")
@@ -97,22 +99,31 @@ class PWMPin:
                 else:
                     if self.duty_cycle > 0 and self.state:
                         self.pin_on()
-                        # print("on",time.time()-t)
-                        
+                    # t = time.time()
                     time.sleep(self.high_time)
-                    self.pin_off()
-                    # print("off",time.time()-t)
+                    # passed = time.time() - t
+                    # if passed > self.high_time* 1.5:
+                        # print("off",passed*1000,self.low_time*1000)
+                    if self.duty_cycle < 1:
+                        self.pin_off()
+                    
+                    # t = time.time()
                     time.sleep(self.low_time)
+                    # passed = time.time() - t
+                    # if time.time()-t > self.low_time* 1.5:
+                    #     print("on",passed*1000,self.low_time*1000)
+    
+
                     # if self.gpio_pin == 14:
                     #     print(time.time())
         except Exception as e:
             self.gpio_pin_register.close()
 
 if __name__ == "__main__":
-    led = PWMPin(1,17)
+    led = PWMPin(17)
     led.set_duty_cycle(0.1)
-    led2 = PWMPin(1,21)
-    led2.set_duty_cycle(0.1)
+    # led2 = PWMPin(1,21)
+    # led2.set_duty_cycle(0.1)
     
 
     time.sleep(15)
