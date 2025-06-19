@@ -14,6 +14,7 @@ class Buttons:
         self.socket = None
         self.pins = pins
         self.gpios = []
+        self.states = [0] * len(pins)  # Initialize states for each button
         # self.open_gpio()
         # self.thread = threading.Thread(target=self.watch_multiple_line_values, daemon=True)
         # self.thread.start()
@@ -36,13 +37,15 @@ class Buttons:
         for offset in self.line_offsets:
             if pin == offset:
                 cmd = {}
-                if state == 1:
+                if state == 1 and self.states[self.line_offsets.index(pin)] == 0:
                     print("Rising edge detected on line {}".format(pin))
-                    cmd = {'command': 'button_press', 'button_id': self.button_ids[self.line_offsets.index(pin)], 'value': 0}
-                elif state == 0:
-                    print("Falling edge detected on line {}".format(pin))
+                    self.states[self.line_offsets.index(pin)] = 1
                     cmd = {'command': 'button_press', 'button_id': self.button_ids[self.line_offsets.index(pin)], 'value': 1}
-                if self.socket:
+                elif state == 0 and self.states[self.line_offsets.index(pin)] == 1:
+                    self.states[self.line_offsets.index(pin)] = 0
+                    print("Falling edge detected on line {}".format(pin))
+                    cmd = {'command': 'button_press', 'button_id': self.button_ids[self.line_offsets.index(pin)], 'value': 0}
+                if self.socket and cmd != {}:
                     try:
                         print(f"Sending button press command for button {self.button_ids[self.line_offsets.index(pin)]}")
                         await self.socket.send(json.dumps(cmd))

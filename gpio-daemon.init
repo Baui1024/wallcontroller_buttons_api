@@ -11,6 +11,4 @@ start_service() {
     procd_set_param respawn  # enables automatic restart on crash
     procd_set_param respawn_delay 5  # wait 5 seconds before restart
     procd_close_instance
-    procd_add_dependency network
-    procd_add_dependency cert-renew
 }
