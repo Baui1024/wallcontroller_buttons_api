@@ -6,6 +6,7 @@ from button import Buttons
 import json
 import logging 
 import os
+from mt7688gpio import MT7688GPIOAsync
 
 
 # Ensure log directory exists
@@ -20,13 +21,18 @@ PORT = 8765
 CERT_FILE = "/etc/ssl/certs/wallcontroller.crt"
 KEY_FILE = "/etc/ssl/private/wallcontroller.key"
 
+
 LEDs = (
-    LED(id = 1, pin_r=0, pin_g=1, pin_b=2), 
-    LED(id = 2, pin_r=4, pin_g=5, pin_b=6), 
-    LED(id = 3, pin_r=8, pin_g=9, pin_b=10),   
-    LED(id = 4, pin_r=12, pin_g=13, pin_b=14),  
-       
+    LED(id = 2, pin_r=14, pin_g=13, pin_b=12),  #rb flipped in current revision
+    LED(id = 4, pin_r=0, pin_g=1, pin_b=2),    
+    LED(id = 3, pin_r=10, pin_g=9, pin_b=8),    #rgb flipped in current revision
+    LED(id = 1, pin_r=4, pin_g=5, pin_b=6),  
 )
+
+gpio = MT7688GPIOAsync(pin=19)
+gpio.set_direction(is_output=True, flip=True)  # Set pin 19 as output//OE for PCA9635
+gpio.set_high()  # Set OE pin high to enable output
+
 input_buttons = Buttons({
     1: 18,  # Button ID 2 on GPIO pin 28
     2: 15,  # Button ID 3 on GPIO pin 16
@@ -66,6 +72,15 @@ async def handle_connection(websocket):
                             if 0 <= index < len(LEDs):
                                 LEDs[index].set_color(color_obj)
                                 await websocket.send(json.dumps({"succes": f"LED {index + 1} color set to {color}"}))
+                            else:
+                                await websocket.send(json.dumps({"error": "Invalid LED index"}))
+                    elif command == 'set_brightness':
+                        brightness = data.get('brightness', 1.0)
+                        for index in led_index:
+                            index = index - 1  # Convert to zero-based index
+                            if 0 <= index < len(LEDs):
+                                LEDs[index].set_brightness(brightness)
+                                await websocket.send(json.dumps({"succes": f"LED {index + 1} brightness set to {brightness}"}))
                             else:
                                 await websocket.send(json.dumps({"error": "Invalid LED index"}))
                     elif command == 'toggle':
