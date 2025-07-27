@@ -21,17 +21,17 @@ CERT_FILE = "/etc/ssl/certs/wallcontroller.crt"
 KEY_FILE = "/etc/ssl/private/wallcontroller.key"
 
 LEDs = (
-    LED(id = 1, pin_r=29, pin_g=36, pin_b=37), 
-    LED(id = 2, pin_r=17, pin_g=18, pin_b=19), 
-    LED(id = 3, pin_r=21, pin_g=22, pin_b=23),   
-    LED(id = 4, pin_r=25, pin_g=26, pin_b=27),  
+    LED(id = 1, pin_r=0, pin_g=1, pin_b=2), 
+    LED(id = 2, pin_r=4, pin_g=5, pin_b=6), 
+    LED(id = 3, pin_r=8, pin_g=9, pin_b=10),   
+    LED(id = 4, pin_r=12, pin_g=13, pin_b=14),  
        
 )
 input_buttons = Buttons({
-    1: 28,  # Button ID 2 on GPIO pin 28
-    2: 16,  # Button ID 3 on GPIO pin 16
-    3: 20,  # Button ID 4 on GPIO pin 20
-    4: 24,  # Button ID 1 on GPIO pin 24
+    1: 18,  # Button ID 2 on GPIO pin 28
+    2: 15,  # Button ID 3 on GPIO pin 16
+    3: 16,  # Button ID 4 on GPIO pin 20
+    4: 17,  # Button ID 1 on GPIO pin 24
 })
 
 

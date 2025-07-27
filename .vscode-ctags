@@ -1,0 +1,50 @@
+!_TAG_FILE_FORMAT	2	/extended format; --format=1 will not append ;" to lines/
+!_TAG_FILE_SORTED	1	/0=unsorted, 1=sorted, 2=foldcase/
+!_TAG_OUTPUT_EXCMD	mixed	/number, pattern, mixed, or combineV2/
+!_TAG_OUTPUT_FILESEP	slash	/slash or backslash/
+!_TAG_OUTPUT_MODE	u-ctags	/u-ctags or e-ctags/
+!_TAG_PATTERN_LENGTH_LIMIT	96	/0 for no limit/
+!_TAG_PROC_CWD	/home/thomas/wallcontroller_buttons_api/	//
+!_TAG_PROGRAM_AUTHOR	Universal Ctags Team	//
+!_TAG_PROGRAM_NAME	Universal Ctags	/Derived from Exuberant Ctags/
+!_TAG_PROGRAM_URL	https://ctags.io/	/official site/
+!_TAG_PROGRAM_VERSION	5.9.0	//
+GPIOObject	gpio_extension.c	/^} GPIOObject;$/;"	t	typeref:struct:__anona0a005c10108	file:
+GPIOType	gpio_extension.c	/^static PyTypeObject GPIOType = {$/;"	v	typeref:typename:PyTypeObject	file:
+GPIO_BASE_ADDR	gpio_extension.c	/^#define GPIO_BASE_ADDR /;"	d	file:
+GPIO_MAP_SIZE	gpio_extension.c	/^#define GPIO_MAP_SIZE /;"	d	file:
+GPIO_dealloc	gpio_extension.c	/^static void GPIO_dealloc(GPIOObject *self) {$/;"	f	typeref:typename:void	file:
+GPIO_init	gpio_extension.c	/^static int GPIO_init(GPIOObject *self, PyObject *args, PyObject *kwds) {$/;"	f	typeref:typename:int	file:
+GPIO_methods	gpio_extension.c	/^static PyMethodDef GPIO_methods[] = {$/;"	v	typeref:typename:PyMethodDef[]	file:
+GPIO_new	gpio_extension.c	/^static PyObject *GPIO_new(PyTypeObject *type, PyObject *args, PyObject *kwds) {$/;"	f	typeref:typename:PyObject *	file:
+GPIO_set_duty_cycle	gpio_extension.c	/^static PyObject *GPIO_set_duty_cycle(GPIOObject *self, PyObject *args) {$/;"	f	typeref:typename:PyObject *	file:
+GPIO_set_frequency	gpio_extension.c	/^static PyObject *GPIO_set_frequency(GPIOObject *self, PyObject *args) {$/;"	f	typeref:typename:PyObject *	file:
+MASK_LEN	.venv/lib/python3.10/site-packages/websockets/speedups.c	/^static const Py_ssize_t MASK_LEN = 4;$/;"	v	typeref:typename:const Py_ssize_t	file:
+MASK_LEN	.venv/lib64/python3.10/site-packages/websockets/speedups.c	/^static const Py_ssize_t MASK_LEN = 4;$/;"	v	typeref:typename:const Py_ssize_t	file:
+PY_SSIZE_T_CLEAN	.venv/lib/python3.10/site-packages/websockets/speedups.c	/^#define PY_SSIZE_T_CLEAN$/;"	d	file:
+PY_SSIZE_T_CLEAN	.venv/lib64/python3.10/site-packages/websockets/speedups.c	/^#define PY_SSIZE_T_CLEAN$/;"	d	file:
+PyInit_gpio_extension	gpio_extension.c	/^PyMODINIT_FUNC PyInit_gpio_extension(void) {$/;"	f	typeref:typename:PyMODINIT_FUNC
+PyInit_speedups	.venv/lib/python3.10/site-packages/websockets/speedups.c	/^PyInit_speedups(void)$/;"	f	typeref:typename:PyMODINIT_FUNC
+PyInit_speedups	.venv/lib64/python3.10/site-packages/websockets/speedups.c	/^PyInit_speedups(void)$/;"	f	typeref:typename:PyMODINIT_FUNC
+REG_CLR	gpio_extension.c	/^#define REG_CLR(/;"	d	file:
+REG_DIR	gpio_extension.c	/^#define REG_DIR(/;"	d	file:
+REG_SET	gpio_extension.c	/^#define REG_SET(/;"	d	file:
+_PyBytesLike_AsStringAndSize	.venv/lib/python3.10/site-packages/websockets/speedups.c	/^_PyBytesLike_AsStringAndSize(PyObject *obj, PyObject **tmp, char **buffer, Py_ssize_t *length)$/;"	f	typeref:typename:int	file:
+_PyBytesLike_AsStringAndSize	.venv/lib64/python3.10/site-packages/websockets/speedups.c	/^_PyBytesLike_AsStringAndSize(PyObject *obj, PyObject **tmp, char **buffer, Py_ssize_t *length)$/;"	f	typeref:typename:int	file:
+__anona0a005c10108	gpio_extension.c	/^typedef struct {$/;"	s	file:
+apply_mask	.venv/lib/python3.10/site-packages/websockets/speedups.c	/^apply_mask(PyObject *self, PyObject *args, PyObject *kwds)$/;"	f	typeref:typename:PyObject *	file:
+apply_mask	.venv/lib64/python3.10/site-packages/websockets/speedups.c	/^apply_mask(PyObject *self, PyObject *args, PyObject *kwds)$/;"	f	typeref:typename:PyObject *	file:
+duty_cycle	gpio_extension.c	/^    double duty_cycle;$/;"	m	struct:__anona0a005c10108	typeref:typename:double	file:
+frequency	gpio_extension.c	/^    double frequency;$/;"	m	struct:__anona0a005c10108	typeref:typename:double	file:
+gpio_base	gpio_extension.c	/^static volatile uint32_t *gpio_base = NULL;$/;"	v	typeref:typename:volatile uint32_t *	file:
+gpiomodule	gpio_extension.c	/^static PyModuleDef gpiomodule = {$/;"	v	typeref:typename:PyModuleDef	file:
+invert	gpio_extension.c	/^    bool invert;$/;"	m	struct:__anona0a005c10108	typeref:typename:bool	file:
+pin	gpio_extension.c	/^    int pin;$/;"	m	struct:__anona0a005c10108	typeref:typename:PyObject_HEAD int	file:
+pwm_loop	gpio_extension.c	/^static void *pwm_loop(void *arg) {$/;"	f	typeref:typename:void *	file:
+running	gpio_extension.c	/^    bool running;$/;"	m	struct:__anona0a005c10108	typeref:typename:bool	file:
+sleep_precise	gpio_extension.c	/^static void sleep_precise(double seconds) {$/;"	f	typeref:typename:void	file:
+speedups_methods	.venv/lib/python3.10/site-packages/websockets/speedups.c	/^static PyMethodDef speedups_methods[] = {$/;"	v	typeref:typename:PyMethodDef[]	file:
+speedups_methods	.venv/lib64/python3.10/site-packages/websockets/speedups.c	/^static PyMethodDef speedups_methods[] = {$/;"	v	typeref:typename:PyMethodDef[]	file:
+speedups_module	.venv/lib/python3.10/site-packages/websockets/speedups.c	/^static struct PyModuleDef speedups_module = {$/;"	v	typeref:struct:PyModuleDef	file:
+speedups_module	.venv/lib64/python3.10/site-packages/websockets/speedups.c	/^static struct PyModuleDef speedups_module = {$/;"	v	typeref:struct:PyModuleDef	file:
+thread	gpio_extension.c	/^    pthread_t thread;$/;"	m	struct:__anona0a005c10108	typeref:typename:pthread_t	file:
