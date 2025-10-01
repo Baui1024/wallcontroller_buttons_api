@@ -89,18 +89,19 @@ class MT7688GPIOAsync:
 
 
 
-import time
+if __name__ == "__main__":
+    import time
 
-async def on_change(state):
-    print("Pin changed to:", state)
+    async def on_change(state):
+        print("Pin changed to:", state)
 
-gpio = MT7688GPIOAsync(pin=16)
-gpio.set_direction(is_output=False, flip=True)  # Set pin 16 as input
+    gpio = MT7688GPIOAsync(pin=16)
+    gpio.set_direction(is_output=False, flip=True)  # Set pin 16 as input
 
-async def main():
-    await gpio.start_polling(on_change, edge="both")
-    await asyncio.sleep(10)
-    await gpio.stop_polling()
-    gpio.close()
+    async def main():
+        await gpio.start_polling(on_change, edge="both")
+        await asyncio.sleep(10)
+        await gpio.stop_polling()
+        gpio.close()
 
-asyncio.run(main())
+    asyncio.run(main())
