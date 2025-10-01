@@ -46,6 +46,34 @@ input_buttons = Buttons({
 ssl_context = ssl.SSLContext(ssl.PROTOCOL_TLS_SERVER)
 ssl_context.load_cert_chain(certfile=CERT_FILE, keyfile=KEY_FILE)
 
+async def flash_leds(data, led_index, color_obj, websocket):
+    color = data.get('off_color', "#000000")
+    hex_color = color.lstrip('#')
+    r = int(hex_color[0:2], 16)
+    g = int(hex_color[2:4], 16)
+    b = int(hex_color[4:6], 16)
+    off_color_obj = Color(r, g, b)
+    length = data.get('length', 1)
+    interval = data.get('interval', 0.5)
+    steps = length / interval
+    
+    for x in range(int(steps/2)):
+        for index in led_index:
+            index = index - 1
+            if 0 <= index < len(LEDs):
+                LEDs[index].set_color(color_obj)
+        await asyncio.sleep(interval)
+        for index in led_index:
+            index = index - 1
+            if 0 <= index < len(LEDs):
+                LEDs[index].set_color(off_color_obj)
+        await asyncio.sleep(interval)
+    
+    try:
+        await websocket.send(json.dumps({"success": f"Flash completed for LEDs {led_index}"}))
+    except websockets.ConnectionClosed:
+        pass  # Client disconnected during flash
+
 # Client handler
 async def handle_connection(websocket):
     remote_address = websocket.remote_address[0]
@@ -60,53 +88,57 @@ async def handle_connection(websocket):
                 if 'command' in data:
                     command = data['command']
                     led_index = data.get('led_index', [])  # Convert to zero-based index
-                    if command == 'set_color':
+                    if command == 'set_color' or command == "flash":
                         color = data.get('color', "#000000")
                         hex_color = color.lstrip('#')
                         r = int(hex_color[0:2], 16)
                         g = int(hex_color[2:4], 16)
                         b = int(hex_color[4:6], 16)
                         color_obj = Color(r, g, b)
-                        for index in led_index:
-                            index = index - 1  # Convert to zero-based index
-                            if 0 <= index < len(LEDs):
-                                LEDs[index].set_color(color_obj)
-                                await websocket.send(json.dumps({"succes": f"LED {index + 1} color set to {color}"}))
-                            else:
-                                await websocket.send(json.dumps({"error": "Invalid LED index"}))
+                        if command == 'set_color':
+                            for index in led_index:
+                                index = index - 1  # Convert to zero-based index
+                                if 0 <= index < len(LEDs):
+                                    LEDs[index].set_color(color_obj)
+                                else:
+                                    await websocket.send(json.dumps({"error": "Invalid LED index"}))
+                            await websocket.send(json.dumps({"succes": f"LEDs {led_index} color set to {color}"}))
+                        elif command == 'flash':
+                            flash_task = asyncio.create_task(flash_leds(data, led_index, color_obj, websocket))
+                            await websocket.send(json.dumps({"success": f"Flash started for LEDs {led_index}"}))
                     elif command == 'set_brightness':
                         brightness = data.get('brightness', 1.0)
                         for index in led_index:
                             index = index - 1  # Convert to zero-based index
                             if 0 <= index < len(LEDs):
                                 LEDs[index].set_brightness(brightness)
-                                await websocket.send(json.dumps({"succes": f"LED {index + 1} brightness set to {brightness}"}))
                             else:
                                 await websocket.send(json.dumps({"error": "Invalid LED index"}))
+                        await websocket.send(json.dumps({"succes": f"LEDs {led_index} brightness set to {brightness}"}))
                     elif command == 'toggle':
                         for index in led_index:
                             index = index - 1  # Convert to zero-based index
                             if 0 <= index < len(LEDs):
                                 LEDs[index].toggle()
-                                await websocket.send(json.dumps({"succes": f"LED {index + 1} toggled"}))
-                        else:
-                            await websocket.send(json.dumps({"error": "Invalid LED index"}))
+                            else:
+                                await websocket.send(json.dumps({"error": "Invalid LED index"}))
+                        await websocket.send(json.dumps({"succes": f"LEDs {led_index} toggled"}))
                     elif command == 'on':
                         for index in led_index:
                             index = index - 1  # Convert to zero-based index
                             if 0 <= index < len(LEDs):
                                 LEDs[index].on()
-                                await websocket.send(json.dumps({"succes": f"LED {index + 1} turned ON"}))
-                        else:
-                            await websocket.send(json.dumps({"error": "Invalid LED index"}))
+                            else:
+                                await websocket.send(json.dumps({"error": "Invalid LED index"}))
+                        await websocket.send(json.dumps({"succes": f"LEDs {led_index} turned ON"}))
                     elif command == 'off':
                         for index in led_index:
                             index = index - 1  # Convert to zero-based index
                             if 0 <= index < len(LEDs):
                                 LEDs[index].off()
-                                await websocket.send(json.dumps({"succes": f"LED {index + 1} turned OFF"}))
-                        else:
-                            await websocket.send(json.dumps({"error": "Invalid LED index"}))
+                            else:
+                                await websocket.send(json.dumps({"error": "Invalid LED index"}))
+                        await websocket.send(json.dumps({"succes": f"LEDs {led_index} turned OFF"}))                        
                     else:
                         await websocket.send(json.dumps({"error": "Unknown command"}))
                 else:
