@@ -34,10 +34,10 @@ gpio.set_direction(is_output=True, flip=True)  # Set pin 19 as output//OE for PC
 gpio.set_high()  # Set OE pin high to enable output
 
 input_buttons = Buttons({
-    1: 18,  # Button ID 2 on GPIO pin 28
-    2: 15,  # Button ID 3 on GPIO pin 16
-    3: 16,  # Button ID 4 on GPIO pin 20
-    4: 17,  # Button ID 1 on GPIO pin 24
+    1: 17,  # Button ID 1 on GPIO pin 17
+    2: 14,  # Button ID 2 on GPIO pin 14
+    3: 15,  # Button ID 3 on GPIO pin 15
+    4: 16,  # Button ID 4 on GPIO pin 16
 })
 
 
@@ -45,6 +45,9 @@ input_buttons = Buttons({
 # Create the SSL context
 ssl_context = ssl.SSLContext(ssl.PROTOCOL_TLS_SERVER)
 ssl_context.load_cert_chain(certfile=CERT_FILE, keyfile=KEY_FILE)
+
+# Track active flash tasks per LED
+active_flash_tasks = {}
 
 async def flash_leds(data, led_index, color_obj, websocket):
     color = data.get('off_color', "#000000")
@@ -104,7 +107,19 @@ async def handle_connection(websocket):
                                     await websocket.send(json.dumps({"error": "Invalid LED index"}))
                             await websocket.send(json.dumps({"succes": f"LEDs {led_index} color set to {color}"}))
                         elif command == 'flash':
+                            global active_flash_tasks
+                            # Cancel any existing flash tasks for the requested LEDs
+                            for index in led_index:
+                                if index in active_flash_tasks and not active_flash_tasks[index].done():
+                                    active_flash_tasks[index].cancel()
+                                    try:
+                                        await active_flash_tasks[index]
+                                    except asyncio.CancelledError:
+                                        pass
+                            # Create a new flash task and track it for each LED
                             flash_task = asyncio.create_task(flash_leds(data, led_index, color_obj, websocket))
+                            for index in led_index:
+                                active_flash_tasks[index] = flash_task
                             await websocket.send(json.dumps({"success": f"Flash started for LEDs {led_index}"}))
                     elif command == 'set_brightness':
                         brightness = data.get('brightness', 1.0)

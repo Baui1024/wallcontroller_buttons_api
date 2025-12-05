@@ -1,4 +1,4 @@
-ip=192.168.177.235
+ip=192.168.177.178
 
 echo "Uploading to $ip"
 sshpass -f "passwordfile" ssh root@$ip "mkdir -p /usr/bin/gpio-daemon"
