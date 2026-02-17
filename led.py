@@ -35,7 +35,7 @@ class LED:
         if not isinstance(color, Color):
             raise TypeError("Color must be an instance of Color namedtuple")
         self.color = color
-        print(f"Setting LED color to R: {color.r}, G: {color.g}, B: {color.b}")
+        # print(f"Setting LED color to R: {color.r}, G: {color.g}, B: {color.b}")
         self.update_pwm()
 
     def set_brightness(self, brightness: int | float):
@@ -44,7 +44,7 @@ class LED:
             raise ValueError("Brightness must be between 0.0 and 1.0")
 
         self.brightness = brightness
-        print(f"Setting LED brightness to {brightness}")
+        # print(f"Setting LED brightness to {brightness}")
         self.update_pwm()
     
 

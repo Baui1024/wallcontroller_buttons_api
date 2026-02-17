@@ -1,21 +1,28 @@
 import asyncio
-import ssl
-import websockets
-from led import LED, Color
-from button import Buttons
 import json
-import logging 
+import logging
+import math
 import os
-from mt7688gpio import MT7688GPIOAsync
+import ssl
 
+import websockets
+
+from button import Buttons
+from led import LED, Color
+from mt7688gpio import MT7688GPIOAsync
 
 # Ensure log directory exists
 os.makedirs('logs', exist_ok=True)
 
 logger = logging.getLogger(__name__)
-
-#logging.basicConfig(filename='logs/example.log', encoding='utf-8', level=logging.DEBUG)
-                    #!/bin/sh
+logging.basicConfig(
+    level=logging.DEBUG,
+    format='%(asctime)s - %(name)s - %(levelname)s - %(message)s',
+    handlers=[
+        # logging.FileHandler('logs/example.log'),
+        logging.StreamHandler()  # This outputs to console
+    ]
+)
 
 PORT = 8765
 CERT_FILE = "/etc/ssl/certs/wallcontroller.crt"
@@ -49,6 +56,10 @@ ssl_context.load_cert_chain(certfile=CERT_FILE, keyfile=KEY_FILE)
 # Track active flash tasks per LED
 active_flash_tasks = {}
 
+# Track connected clients and breathing task
+connected_clients = set()
+breathing_task = None
+
 async def flash_leds(data, led_index, color_obj, websocket):
     color = data.get('off_color', "#000000")
     hex_color = color.lstrip('#')
@@ -77,10 +88,85 @@ async def flash_leds(data, led_index, color_obj, websocket):
     except websockets.ConnectionClosed:
         pass  # Client disconnected during flash
 
+async def breathing_pattern():
+    """
+    Creates a breathing LED pattern across the 4 buttons.
+    Layout:
+        1 2
+        3 4
+    Pattern: Wave-like breathing that moves diagonally.
+    """
+    
+    # LED order for the wave pattern (diagonal sweep)
+    # 1 -> 2,3 -> 4
+    led_order = [
+        [0],      # LED 1 (top-left)
+        [1, 2],   # LED 2 (top-right) and LED 3 (bottom-left)
+        [3],      # LED 4 (bottom-right)
+    ]
+    
+    base_color = Color(0, 100, 255)  # Blue breathing color
+    step_delay = 0.02  # 20ms per step for smooth animation
+    breath_steps = 50  # Steps for one breath cycle
+    phase_offset = 0.4  # Phase offset between LED groups
+    
+    try:
+        phase = 0.0
+        while True:
+            # Calculate brightness for each LED group based on phase
+            for group_idx, led_group in enumerate(led_order):
+                # Offset phase for each group to create wave effect
+                group_phase = phase - (group_idx * phase_offset)
+                # Use sine wave for smooth breathing (0 to 1)
+                brightness = (math.sin(group_phase * math.pi * 2) + 1) / 2
+                brightness = brightness * 0.9 + 0.1  # Keep minimum brightness at 10%
+                
+                # Apply to each LED in the group
+                for led_idx in led_group:
+                    if 0 <= led_idx < len(LEDs):
+                        # Scale color by brightness
+                        r = int(base_color.r * brightness)
+                        g = int(base_color.g * brightness)
+                        b = int(base_color.b * brightness)
+                        LEDs[led_idx].set_color(Color(r, g, b))
+            
+            phase += 1.0 / breath_steps
+            if phase >= 1.0:
+                phase = 0.0
+            
+            await asyncio.sleep(step_delay)
+    except asyncio.CancelledError:
+        # Don't turn off LEDs when cancelled - let the client control them
+        logger.debug("Breathing pattern cancelled")
+        raise
+
+async def start_breathing():
+    global breathing_task
+    if breathing_task is None or breathing_task.done():
+        breathing_task = asyncio.create_task(breathing_pattern())
+        logger.info("Breathing pattern started")
+
+async def stop_breathing():
+    global breathing_task
+    if breathing_task and not breathing_task.done():
+        breathing_task.cancel()
+        try:
+            await breathing_task
+        except asyncio.CancelledError:
+            pass
+        breathing_task = None
+        logger.info("Breathing pattern stopped")
+
 # Client handler
 async def handle_connection(websocket):
+    global connected_clients
     remote_address = websocket.remote_address[0]
     logger.info(f"[+] Secure connection from {remote_address}")
+    
+    # Stop breathing pattern when client connects
+    connected_clients.add(websocket)
+    await stop_breathing()
+    
     input_buttons.socket = websocket  # Assign the WebSocket to the buttons for sending commands
     await input_buttons.open_gpio()
     try:
@@ -164,10 +250,29 @@ async def handle_connection(websocket):
         logger.info(f"[-] Connection closed from {remote_address}")
         input_buttons.socket = None
         await input_buttons.close_gpio()
+    finally:
+        # Cancel any active flash tasks when connection closes
+        for index, task in list(active_flash_tasks.items()):
+            if not task.done():
+                task.cancel()
+                try:
+                    await task
+                except asyncio.CancelledError:
+                    pass
+        active_flash_tasks.clear()
+        
+        # Remove client and restart breathing if no clients connected
+        connected_clients.discard(websocket)
+        if len(connected_clients) == 0:
+            await start_breathing()
 
 # Main event loop
 async def main():
     logger.info(f"🔐 Secure WebSocket server on wss://0.0.0.0:{PORT}")
+    
+    # Start breathing pattern initially (no clients connected)
+    await start_breathing()
+    
     async with websockets.serve(handle_connection, "0.0.0.0", PORT, ssl=ssl_context):
         await asyncio.Future()  # Run forever
 
