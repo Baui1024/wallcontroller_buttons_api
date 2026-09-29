@@ -1,9 +1,7 @@
 import websockets
 import select
 import threading
-import gpiod
 import asyncio
-from gpiod.line import Edge
 from mt7688gpio import MT7688GPIOAsync
 
 import json

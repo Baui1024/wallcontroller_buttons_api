@@ -270,10 +270,11 @@ async def handle_connection(websocket):
 async def main():
     logger.info(f"🔐 Secure WebSocket server on wss://0.0.0.0:{PORT}")
     
-    # Start breathing pattern initially (no clients connected)
-    await start_breathing()
-    
     async with websockets.serve(handle_connection, "0.0.0.0", PORT, ssl=ssl_context):
+        # Start breathing only once the server is listening, so the animation
+        # doesn't compete for CPU with server startup during boot
+        if not connected_clients:
+            await start_breathing()
         await asyncio.Future()  # Run forever
 
 if __name__ == "__main__":
