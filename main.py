@@ -1,4 +1,6 @@
 import asyncio
+import hmac
+import http
 import json
 import logging
 import math
@@ -27,6 +29,9 @@ logging.basicConfig(
 # forwards here, so certificates are handled in one place
 HOST = "127.0.0.1"
 PORT = 8766
+
+# Optional token (set in the web UI) clients must send in the X-Api-Key header
+SECURITY_CONFIG_FILE = "/etc/webserver/security.json"
 
 
 LEDs = (
@@ -170,6 +175,30 @@ async def stop_breathing():
         breathing_task = None
         logger.info("Breathing pattern stopped")
 
+def expected_token():
+    """Token clients must send, or None when token authentication is off.
+    Read on every connection so changes in the web UI apply immediately."""
+    try:
+        with open(SECURITY_CONFIG_FILE, "r") as f:
+            config = json.load(f)
+    except (FileNotFoundError, json.JSONDecodeError):
+        return None
+    if not config.get("wsTokenEnabled") or not config.get("wsToken"):
+        return None
+    return config["wsToken"]
+
+async def check_token(path, request_headers):
+    """Reject the websocket handshake with 401 if the token doesn't match."""
+    token = expected_token()
+    if token is None:
+        return None
+    sent = request_headers.get("X-Api-Key", "")
+    if hmac.compare_digest(sent.encode(), token.encode()):
+        return None
+    client = request_headers.get("X-Forwarded-For", "unknown")
+    logger.warning(f"[!] Rejected connection from {client}: invalid or missing X-Api-Key")
+    return (http.HTTPStatus.UNAUTHORIZED, [("Content-Type", "text/plain")], b"Invalid or missing X-Api-Key\n")
+
 # Client handler
 async def handle_connection(websocket):
     global connected_clients
@@ -291,7 +320,7 @@ async def main():
 
     # Commands are small JSON messages: cap message size and the per-connection
     # receive queue so a flooding client gets backpressure instead of piling up
-    async with websockets.serve(handle_connection, HOST, PORT,
+    async with websockets.serve(handle_connection, HOST, PORT, process_request=check_token,
                                 max_size=4096, max_queue=8):
         # Start breathing only once the server is listening, so the animation
         # doesn't compete for CPU with server startup during boot
