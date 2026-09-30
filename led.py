@@ -9,6 +9,10 @@ from collections import namedtuple
 Color = namedtuple('Color', ['r', 'g', 'b'])
 
 class LED:
+    # Called on every state change instead of writing to the hardware directly.
+    # The daemon sets this to coalesce updates; standalone use writes immediately.
+    on_change = None
+
     def __init__(self, id: int, pin_r: int, pin_g: int, pin_b: int):
         self.pin_r = pin_r 
         self.pin_g = pin_g
@@ -16,27 +20,28 @@ class LED:
         self.brightness = 1
         self.color = Color(0, 0, 0) # LED is initially off
         self.state = True
+        self._written = {}  # pin -> value last written to sysfs
         # self.led = (PWMPin(pin_r), PWMPin(pin_g), PWMPin(pin_b))
         self.update_pwm()
 
     def on(self):
         self.state = True
-        self.update_pwm()
+        self._changed()
 
     def off(self):
         self.state = False
-        self.update_pwm()
+        self._changed()
 
     def toggle(self):
         self.state = not self.state
-        self.update_pwm()
+        self._changed()
 
     def set_color(self, color: Color):
         if not isinstance(color, Color):
             raise TypeError("Color must be an instance of Color namedtuple")
         self.color = color
         # print(f"Setting LED color to R: {color.r}, G: {color.g}, B: {color.b}")
-        self.update_pwm()
+        self._changed()
 
     def set_brightness(self, brightness: int | float):
         brightness = float(brightness)
@@ -45,25 +50,26 @@ class LED:
 
         self.brightness = brightness
         # print(f"Setting LED brightness to {brightness}")
-        self.update_pwm()
+        self._changed()
     
 
+    def _changed(self):
+        if LED.on_change is not None:
+            LED.on_change()
+        else:
+            self.update_pwm()
+
     def update_pwm(self):
-        with open(f"/sys/class/leds/pca963x:led{self.pin_r}/brightness", 'w') as f:
-            if self.state:
-                f.write(str(int(self.color.r*self.brightness)))
-            else:
-                f.write("0")
-        with open(f"/sys/class/leds/pca963x:led{self.pin_g}/brightness", 'w') as f:
-            if self.state:
-                f.write(str(int(self.color.g*self.brightness)))
-            else:
-                f.write("0")
-        with open(f"/sys/class/leds/pca963x:led{self.pin_b}/brightness", 'w') as f:
-            if self.state:
-                f.write(str(int(self.color.b*self.brightness)))
-            else:
-                f.write("0")
+        """Write the current target state to sysfs, skipping unchanged channels."""
+        for pin, value in ((self.pin_r, self.color.r),
+                           (self.pin_g, self.color.g),
+                           (self.pin_b, self.color.b)):
+            value = int(value * self.brightness) if self.state else 0
+            if self._written.get(pin) == value:
+                continue
+            with open(f"/sys/class/leds/pca963x:led{pin}/brightness", 'w') as f:
+                f.write(str(value))
+            self._written[pin] = value
 
 if __name__ == "__main__":
     led = LED(1, 0, 1, 2)

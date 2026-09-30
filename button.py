@@ -18,12 +18,15 @@ class Buttons:
         # self.thread.start()
     
     async def open_gpio(self):
+        if self.gpios:
+            return  # already polling
         self.line_offsets = tuple(self.pins.values())
         self.button_ids = tuple(self.pins.keys())
         for offset in self.line_offsets:
             gpio = MT7688GPIOAsync(offset)
             gpio.set_direction(is_output=False, flip=True)
             await gpio.start_polling(self.on_change, edge="both")
+            self.gpios.append(gpio)
 
     async def close_gpio(self):
         for gpio in self.gpios:

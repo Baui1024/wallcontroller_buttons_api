@@ -16,7 +16,7 @@ os.makedirs('logs', exist_ok=True)
 
 logger = logging.getLogger(__name__)
 logging.basicConfig(
-    level=logging.DEBUG,
+    level=logging.INFO,  # DEBUG logs every message, too costly on this CPU
     format='%(asctime)s - %(name)s - %(levelname)s - %(message)s',
     handlers=[
         # logging.FileHandler('logs/example.log'),
@@ -33,8 +33,15 @@ LEDs = (
     LED(id = 2, pin_r=14, pin_g=13, pin_b=12),  #rb flipped in current revision
     LED(id = 4, pin_r=0, pin_g=1, pin_b=2),    
     LED(id = 3, pin_r=10, pin_g=9, pin_b=8),    #rgb flipped in current revision
-    LED(id = 1, pin_r=4, pin_g=5, pin_b=6),  
+    LED(id = 1, pin_r=4, pin_g=5, pin_b=6),
 )
+
+# LED commands only update the target state; led_writer() pushes it to the
+# hardware at most every LED_FRAME_INTERVAL, so bursts of commands can't queue
+# up I2C writes (latest state wins).
+LED_FRAME_INTERVAL = 0.02  # max 50 hardware updates/s
+led_dirty = asyncio.Event()
+LED.on_change = led_dirty.set
 
 gpio = MT7688GPIOAsync(pin=19)
 gpio.set_direction(is_output=True, flip=True)  # Set pin 19 as output//OE for PCA9635
@@ -87,6 +94,17 @@ async def flash_leds(data, led_index, color_obj, websocket):
         await websocket.send(json.dumps({"success": f"Flash completed for LEDs {led_index}"}))
     except websockets.ConnectionClosed:
         pass  # Client disconnected during flash
+
+async def led_writer():
+    while True:
+        await led_dirty.wait()
+        led_dirty.clear()
+        for led in LEDs:
+            try:
+                led.update_pwm()
+            except OSError as e:
+                logger.error(f"LED write failed: {e}")
+        await asyncio.sleep(LED_FRAME_INTERVAL)
 
 async def breathing_pattern():
     """
@@ -171,7 +189,7 @@ async def handle_connection(websocket):
     await input_buttons.open_gpio()
     try:
         async for message in websocket:
-            logger.debug(f"[>] {message}")
+            logger.debug("[>] %s", message)
             try:
                 data = json.loads(message)
                 if 'command' in data:
@@ -247,10 +265,9 @@ async def handle_connection(websocket):
             except json.JSONDecodeError:
                 await websocket.send('{"error": "Invalid JSON format"}')
     except websockets.ConnectionClosed:
-        logger.info(f"[-] Connection closed from {remote_address}")
-        input_buttons.socket = None
-        await input_buttons.close_gpio()
+        pass
     finally:
+        logger.info(f"[-] Connection closed from {remote_address}")
         # Cancel any active flash tasks when connection closes
         for index, task in list(active_flash_tasks.items()):
             if not task.done():
@@ -261,16 +278,25 @@ async def handle_connection(websocket):
                     pass
         active_flash_tasks.clear()
         
-        # Remove client and restart breathing if no clients connected
+        # Remove client; hand button events to a remaining client, or stop
+        # polling and restart breathing if none is left
         connected_clients.discard(websocket)
+        if input_buttons.socket is websocket:
+            input_buttons.socket = next(iter(connected_clients), None)
         if len(connected_clients) == 0:
+            await input_buttons.close_gpio()
             await start_breathing()
 
 # Main event loop
 async def main():
     logger.info(f"🔐 Secure WebSocket server on wss://0.0.0.0:{PORT}")
     
-    async with websockets.serve(handle_connection, "0.0.0.0", PORT, ssl=ssl_context):
+    writer_task = asyncio.create_task(led_writer())  # noqa: F841 (keep a reference)
+
+    # Commands are small JSON messages: cap message size and the per-connection
+    # receive queue so a flooding client gets backpressure instead of piling up
+    async with websockets.serve(handle_connection, "0.0.0.0", PORT, ssl=ssl_context,
+                                max_size=4096, max_queue=8):
         # Start breathing only once the server is listening, so the animation
         # doesn't compete for CPU with server startup during boot
         if not connected_clients:
