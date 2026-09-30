@@ -3,7 +3,6 @@ import json
 import logging
 import math
 import os
-import ssl
 
 import websockets
 
@@ -24,9 +23,10 @@ logging.basicConfig(
     ]
 )
 
-PORT = 8765
-CERT_FILE = "/etc/ssl/certs/wallcontroller.crt"
-KEY_FILE = "/etc/ssl/private/wallcontroller.key"
+# Plain ws on localhost only: nginx terminates TLS on wss://<device>:8765 and
+# forwards here, so certificates are handled in one place
+HOST = "127.0.0.1"
+PORT = 8766
 
 
 LEDs = (
@@ -54,11 +54,6 @@ input_buttons = Buttons({
     4: 16,  # Button ID 4 on GPIO pin 16
 })
 
-
-
-# Create the SSL context
-ssl_context = ssl.SSLContext(ssl.PROTOCOL_TLS_SERVER)
-ssl_context.load_cert_chain(certfile=CERT_FILE, keyfile=KEY_FILE)
 
 # Track active flash tasks per LED
 active_flash_tasks = {}
@@ -178,8 +173,9 @@ async def stop_breathing():
 # Client handler
 async def handle_connection(websocket):
     global connected_clients
-    remote_address = websocket.remote_address[0]
-    logger.info(f"[+] Secure connection from {remote_address}")
+    # Behind the nginx proxy the peer is always 127.0.0.1; nginx passes the real client
+    remote_address = websocket.request_headers.get("X-Forwarded-For", websocket.remote_address[0])
+    logger.info(f"[+] Connection from {remote_address}")
     
     # Stop breathing pattern when client connects
     connected_clients.add(websocket)
@@ -289,13 +285,13 @@ async def handle_connection(websocket):
 
 # Main event loop
 async def main():
-    logger.info(f"🔐 Secure WebSocket server on wss://0.0.0.0:{PORT}")
+    logger.info(f"WebSocket server on ws://{HOST}:{PORT} (TLS via nginx on :8765)")
     
     writer_task = asyncio.create_task(led_writer())  # noqa: F841 (keep a reference)
 
     # Commands are small JSON messages: cap message size and the per-connection
     # receive queue so a flooding client gets backpressure instead of piling up
-    async with websockets.serve(handle_connection, "0.0.0.0", PORT, ssl=ssl_context,
+    async with websockets.serve(handle_connection, HOST, PORT,
                                 max_size=4096, max_queue=8):
         # Start breathing only once the server is listening, so the animation
         # doesn't compete for CPU with server startup during boot
